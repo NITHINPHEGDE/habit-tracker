@@ -23,13 +23,11 @@ export default function MasteryPage({habits,logs}){
   const last30days=useMemo(()=>Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(29-i));return dateKey(d)}),[])
   const last7days=useMemo(()=>Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return dateKey(d)}),[])
 
-  // Radar data - one entry per habit, 30-day completion %
   const radarData=useMemo(()=>habits.map(h=>{
     const done=last30days.filter(d=>{const v=logs[h._id]?.[d];return h.type==="bool"?(v===1||v===true):(v||0)>=(h.target||1)}).length
     return{subject:h.name.length>10?h.name.slice(0,10)+"…":h.name,fullName:h.name,score:Math.round(done/30*100),color:h.color||C.green}
   }),[habits,logs,last30days])
 
-  // Per-habit 7-day trend lines
   const weekTrend=useMemo(()=>last7days.map(d=>{
     const entry={day:new Date(d).toLocaleDateString("en",{weekday:"short"})}
     habits.forEach(h=>{
@@ -40,10 +38,8 @@ export default function MasteryPage({habits,logs}){
     return entry
   }),[habits,logs,last7days])
 
-  // Completion rank
   const ranked=useMemo(()=>[...radarData].sort((a,b)=>b.score-a.score),[radarData])
 
-  // Consistency score (how many days in a row each habit was done)
   const consistency=useMemo(()=>habits.map(h=>{
     let streak=0
     const d=new Date()
@@ -61,13 +57,13 @@ export default function MasteryPage({habits,logs}){
   if(!habits.length)return <EmptyState/>
 
   return(
-    <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0}} style={{padding:"clamp(24px,5vw,48px) clamp(16px,4vw,32px)"}}>
+    <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0}} style={{padding:"20px 16px"}}>
       <PageHeader icon="🎯" title="Mastery" sub="Deep Habit Intelligence"/>
 
       {/* Radar chart */}
       <GlassCard style={{marginBottom:16}} glow>
         <p style={{fontFamily:F.heading,fontSize:8,letterSpacing:"0.25em",color:C.greenDim,marginBottom:8}}>🕸 MASTERY RADAR · 30-DAY</p>
-        <ResponsiveContainer width="100%" height={260}>
+        <ResponsiveContainer width="100%" height={240}>
           <RadarChart data={radarData} margin={{top:10,right:20,bottom:10,left:20}}>
             <PolarGrid stroke="rgba(52,211,113,0.12)" gridType="polygon"/>
             <PolarAngleAxis dataKey="subject" tick={{fontFamily:F.heading,fontSize:9,fill:C.ivoryFaint,letterSpacing:"0.05em"}}/>
@@ -78,22 +74,22 @@ export default function MasteryPage({habits,logs}){
         </ResponsiveContainer>
       </GlassCard>
 
-      {/* Rank leaderboard + streak side by side */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:16,marginBottom:16}}>
+      {/* Rank leaderboard + streak stacked on mobile */}
+      <div style={{display:"flex",flexDirection:"column",gap:16,marginBottom:16}}>
         <GlassCard>
           <p style={{fontFamily:F.heading,fontSize:8,letterSpacing:"0.25em",color:C.greenDim,marginBottom:16}}>🏆 HABIT LEADERBOARD</p>
-          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
             {ranked.map((h,i)=>(
               <div key={h.subject} style={{display:"flex",alignItems:"center",gap:10}}>
                 <span style={{fontFamily:F.heading,fontSize:10,color:i===0?C.gold:i===1?C.ivory:C.ivoryFaint,width:16,flexShrink:0}}>{i+1}</span>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
                     <span style={{fontFamily:F.heading,fontSize:10,color:C.ivory,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.fullName}</span>
                     <span style={{fontFamily:F.heading,fontSize:10,color:h.color,flexShrink:0,marginLeft:8}}>{h.score}%</span>
                   </div>
-                  <div style={{height:4,borderRadius:4,background:"rgba(255,255,255,0.05)"}}>
+                  <div style={{height:6,borderRadius:4,background:"rgba(255,255,255,0.05)",overflow:"hidden"}}>
                     <motion.div initial={{width:0}} animate={{width:`${h.score}%`}} transition={{duration:0.8,delay:i*0.1,ease:[0.22,1,0.36,1]}}
-                      style={{height:"100%",background:`linear-gradient(90deg,${h.color}55,${h.color})`,borderRadius:4}}/>
+                      style={{height:"100%",background:`linear-gradient(90deg,${h.color}55,${h.color})`,borderRadius:4,boxShadow:`0 0 8px ${h.color}44`}}/>
                   </div>
                 </div>
               </div>
@@ -103,7 +99,7 @@ export default function MasteryPage({habits,logs}){
 
         <GlassCard>
           <p style={{fontFamily:F.heading,fontSize:8,letterSpacing:"0.25em",color:C.greenDim,marginBottom:16}}>⚡ CURRENT STREAKS</p>
-          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
             {consistency.map((h,i)=>(
               <div key={h.name} style={{display:"flex",alignItems:"center",gap:10}}>
                 <div style={{width:8,height:8,borderRadius:2,background:h.color,flexShrink:0}}/>
@@ -132,7 +128,6 @@ export default function MasteryPage({habits,logs}){
             ))}
           </LineChart>
         </ResponsiveContainer>
-        {/* Legend */}
         <div style={{display:"flex",flexWrap:"wrap",gap:10,marginTop:10}}>
           {habits.map((h,i)=>(
             <div key={h._id} style={{display:"flex",alignItems:"center",gap:5}}>
@@ -143,20 +138,36 @@ export default function MasteryPage({habits,logs}){
         </div>
       </GlassCard>
 
-      {/* 30-day bar per habit */}
+      {/* 30-day completion bars — redesigned */}
       <GlassCard>
-        <p style={{fontFamily:F.heading,fontSize:8,letterSpacing:"0.25em",color:C.greenDim,marginBottom:12}}>🎯 30-DAY COMPLETION BARS</p>
-        <ResponsiveContainer width="100%" height={Math.max(120,habits.length*40)}>
-          <BarChart data={ranked} layout="vertical" margin={{top:0,right:40,bottom:0,left:0}}>
-            <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.04)" horizontal={false}/>
-            <XAxis type="number" domain={[0,100]} tick={{fontFamily:F.heading,fontSize:8,fill:C.ivoryFaint}} axisLine={false} tickLine={false}/>
-            <YAxis dataKey="fullName" type="category" width={90} tick={{fontFamily:F.heading,fontSize:9,fill:C.ivory}} axisLine={false} tickLine={false}/>
-            <Tooltip content={<TT/>}/>
-            <Bar dataKey="score" radius={[0,6,6,0]} maxBarSize={20}>
-              {ranked.map((h,i)=><Cell key={i} fill={h.color}/>)}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        <p style={{fontFamily:F.heading,fontSize:8,letterSpacing:"0.25em",color:C.greenDim,marginBottom:16}}>🎯 30-DAY COMPLETION</p>
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          {ranked.map((h,i)=>(
+            <div key={h.fullName}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{width:8,height:8,borderRadius:2,background:h.color,flexShrink:0,boxShadow:`0 0 6px ${h.color}`}}/>
+                  <span style={{fontFamily:F.heading,fontSize:11,color:C.ivory}}>{h.fullName}</span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontFamily:F.heading,fontSize:13,color:h.color,fontWeight:"bold"}}>{h.score}%</span>
+                  {h.score>=70&&<span style={{fontSize:12}}>🏆</span>}
+                  {h.score>=40&&h.score<70&&<span style={{fontSize:12}}>⚡</span>}
+                  {h.score<40&&<span style={{fontSize:12}}>🌱</span>}
+                </div>
+              </div>
+              <div style={{height:10,borderRadius:6,background:"rgba(255,255,255,0.05)",overflow:"hidden",position:"relative"}}>
+                <motion.div
+                  initial={{width:0}}
+                  animate={{width:`${h.score}%`}}
+                  transition={{duration:1,delay:i*0.1,ease:[0.22,1,0.36,1]}}
+                  style={{height:"100%",borderRadius:6,background:`linear-gradient(90deg,${h.color}44,${h.color})`,boxShadow:`0 0 12px ${h.color}66`,position:"relative"}}>
+                  <div style={{position:"absolute",right:0,top:0,bottom:0,width:3,background:h.color,borderRadius:"0 6px 6px 0",boxShadow:`0 0 8px ${h.color}`}}/>
+                </motion.div>
+              </div>
+            </div>
+          ))}
+        </div>
       </GlassCard>
     </motion.div>
   )
